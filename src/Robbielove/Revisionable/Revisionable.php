@@ -157,7 +157,7 @@ class Revisionable extends Eloquent
 
             foreach ($changes_to_record as $key => $change) {
                 $revisions[] = array(
-                    'uid' => Str::uuid(),
+                    'id' => Str::uuid(),
                     'revisionable_type'     => $this->getMorphClass(),
                     'revisionable_id'       => $this->getKey(),
                     'key'                   => $key,
@@ -193,7 +193,7 @@ class Revisionable extends Eloquent
         if ((!isset($this->revisionEnabled) || $this->revisionEnabled))
         {
             $revisions[] = array(
-                'uid' => Str::uuid(),
+                'id' => Str::uuid(),
                 'revisionable_type' => $this->getMorphClass(),
                 'revisionable_id' => $this->getKey(),
                 'key' => self::CREATED_AT,
@@ -218,7 +218,7 @@ class Revisionable extends Eloquent
             && $this->isSoftDelete()
             && $this->isRevisionable($this->getDeletedAtColumn())) {
             $revisions[] = array(
-                'uid' => Str::uuid(),
+                'id' => Str::uuid(),
                 'revisionable_type' => $this->getMorphClass(),
                 'revisionable_id' => $this->getKey(),
                 'key' => $this->getDeletedAtColumn(),
