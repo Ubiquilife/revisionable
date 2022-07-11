@@ -12,10 +12,10 @@ class CreateRevisionsTable extends Migration
     public function up()
     {
         Schema::create('revisions', function ($table) {
-            $table->bigIncrements('id');
+            $table->uuid('id');
             $table->string('revisionable_type');
-            $table->unsignedBigInteger('revisionable_id');
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->uuid('revisionable_id');
+            $table->uuid('user_id')->nullable();
             $table->string('key');
             $table->text('old_value')->nullable();
             $table->text('new_value')->nullable();
