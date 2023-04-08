@@ -1,7 +1,14 @@
 {
     "name": "ubiquilife/revisionable",
+    "license": "Private",
     "description": "Keep a revision history for your models without thinking, created as a package for use with Laravel",
-    "keywords": ["model", "laravel", "revision", "history"],
+    "keywords": [
+        "model",
+        "laravel",
+        "revision",
+        "history"
+    ],
+    "homepage": "http://github.com/ubiquilife/revisionable",
     "authors": [
         {
             "name": "Ubiquilife",
@@ -9,8 +16,6 @@
             "role": "Developer"
         }
     ],
-    "homepage": "http://github.com/ubiquilife/revisionable",
-    "license": "Private",
     "require": {
         "php": ">=5.4.0",
         "illuminate/support": "~4.0|~5.0|~5.1|^6.0|^7.0|^8.0|^9.0|^10.0",
@@ -30,7 +35,7 @@
         }
     },
     "require-dev": {
-        "orchestra/testbench": "~3.0"
+        "orchestra/testbench": "~3.0|^8.0"
     },
     "extra": {
         "laravel": {
