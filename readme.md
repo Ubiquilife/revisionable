@@ -242,7 +242,7 @@ Analogous to "boolean", only any text or numeric values can act as a source valu
 Look at this as an associative array in which the key is separated from the value by a dot. Array elements are separated by a vertical line.
 
 ```
-options: search.On the search|network.In networks
+options:search.On the search|network.In networks
 ```
 
 ### DateTime
@@ -301,7 +301,7 @@ If you have enabled revisions of creations as well you can display it like this:
 
 ### userResponsible()
 
-Returns the User that was responsible for making the revision. A user model is returned, or null if there was no user recorded.
+Returns the User that was responsible for making the revision. A user model is returned, or false if there was no user recorded.
 
 The user model that is loaded depends on what you have set in your `config/auth.php` file for the `model` variable.
 
