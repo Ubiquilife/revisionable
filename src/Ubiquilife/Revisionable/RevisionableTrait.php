@@ -131,12 +131,19 @@ trait RevisionableTrait
                 $castCheck = ['object', 'array'];
                 if (isset($this->casts[$key]) && in_array(gettype($val), $castCheck) && in_array($this->casts[$key], $castCheck) && isset($this->originalData[$key])) {
                     // Sorts the keys of a JSON object due Normalization performed by MySQL
-                    // So it doesn't set false flag if it is changed only order of key or whitespace after comma
+                    // So it doesn't set false flag if it is changed only order of key or whitespace after comma.
+                    //
+                    // Seeders and some cast paths leave the value as a PHP array
+                    // rather than a JSON string. Handle both without crashing.
+                    $updatedValue = is_array($this->updatedData[$key])
+                        ? $this->updatedData[$key]
+                        : json_decode($this->updatedData[$key], true);
+                    $originalValue = is_array($this->originalData[$key])
+                        ? $this->originalData[$key]
+                        : json_decode($this->originalData[$key], true);
 
-                    $updatedData = $this->sortJsonKeys(json_decode($this->updatedData[$key], true));
-
-                    $this->updatedData[$key] = json_encode($updatedData);
-                    $this->originalData[$key] = json_encode(json_decode($this->originalData[$key], true));
+                    $this->updatedData[$key] = json_encode($this->sortJsonKeys($updatedValue));
+                    $this->originalData[$key] = json_encode($originalValue);
                 } else if (gettype($val) == 'object' && !method_exists($val, '__toString')) {
                     unset($this->originalData[$key]);
                     unset($this->updatedData[$key]);
