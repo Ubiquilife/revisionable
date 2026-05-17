@@ -205,6 +205,7 @@ trait RevisionableTrait
                     'old_value' => Arr::get($this->originalData, $key),
                     'new_value' => $this->updatedData[$key],
                     'user_id' => $this->getSystemUserId(),
+                    'on_behalf_of_user_id' => $this->getOnBehalfOfUserId(),
                     'created_at' => new \DateTime(),
                     'updated_at' => new \DateTime(),
                 );
@@ -250,6 +251,7 @@ trait RevisionableTrait
                 'old_value' => null,
                 'new_value' => $this->{self::CREATED_AT},
                 'user_id' => $this->getSystemUserId(),
+                'on_behalf_of_user_id' => $this->getOnBehalfOfUserId(),
                 'created_at' => new \DateTime(),
                 'updated_at' => new \DateTime(),
             );
@@ -282,6 +284,7 @@ trait RevisionableTrait
                 'old_value' => null,
                 'new_value' => $this->{$this->getDeletedAtColumn()},
                 'user_id' => $this->getSystemUserId(),
+                'on_behalf_of_user_id' => $this->getOnBehalfOfUserId(),
                 'created_at' => new \DateTime(),
                 'updated_at' => new \DateTime(),
             );
@@ -316,6 +319,7 @@ trait RevisionableTrait
                 'old_value' => $this->{self::CREATED_AT},
                 'new_value' => null,
                 'user_id' => $this->getSystemUserId(),
+                'on_behalf_of_user_id' => $this->getOnBehalfOfUserId(),
                 'created_at' => new \DateTime(),
                 'updated_at' => new \DateTime(),
             );
@@ -327,12 +331,38 @@ trait RevisionableTrait
     }
 
     /**
-     * Attempt to find the user id of the currently logged in user
-     * Supports Cartalyst Sentry/Sentinel based authentication, as well as stock Auth
+     * Attempt to find the user id of the currently logged in user.
+     * Supports Cartalyst Sentry/Sentinel based authentication, stock
+     * Auth, and the Ubiquilife platform's agent-delegation pattern:
+     * when an OAuth application has `agent_user_id` set, the request
+     * pipeline (ResolveAgentActor middleware) swaps the actor to the
+     * agent identity and stashes the human caller as on-behalf-of.
+     * ActorResolver returns the agent's id here, so revisions attribute
+     * correctly to the agent.
      **/
     public function getSystemUserId()
     {
         try {
+            // Prefer ActorResolver (Ubiquilife platform agent delegation).
+            // Fall back transparently when the binding isn't registered
+            // (eg. revisionable used standalone outside Ubiquilife).
+            try {
+                if (class_exists('\Ubiquilife\Appbase\Services\Agent\ActorResolver')
+                    && function_exists('app')
+                ) {
+                    $resolver = app('\Ubiquilife\Appbase\Services\Agent\ActorResolver');
+                    if ($resolver && method_exists($resolver, 'actorId')) {
+                        $actorId = $resolver->actorId();
+                        if ($actorId !== null) {
+                            return $actorId;
+                        }
+                    }
+                }
+            } catch (\Throwable $resolverError) {
+                // Resolver not bound or container unavailable. Fall through
+                // to legacy auth lookups below.
+            }
+
             if (class_exists($class = '\SleepingOwl\AdminAuth\Facades\AdminAuth')
                 || class_exists($class = '\Cartalyst\Sentry\Facades\Laravel\Sentry')
                 || class_exists($class = '\Cartalyst\Sentinel\Laravel\Facades\Sentinel')
@@ -347,6 +377,31 @@ trait RevisionableTrait
             return null;
         }
 
+        return null;
+    }
+
+    /**
+     * Ubiquilife agent-delegation companion to getSystemUserId(). Returns
+     * the human user id when an agent is acting on their behalf;
+     * otherwise null. The `on_behalf_of_user_id` revisions column was
+     * added in laravel-appbase migration
+     * 2026_05_17_140300_add_on_behalf_of_to_revisions_table.
+     */
+    public function getOnBehalfOfUserId()
+    {
+        try {
+            if (! class_exists('\Ubiquilife\Appbase\Services\Agent\ActorResolver')
+                || ! function_exists('app')
+            ) {
+                return null;
+            }
+            $resolver = app('\Ubiquilife\Appbase\Services\Agent\ActorResolver');
+            if ($resolver && method_exists($resolver, 'onBehalfOfId')) {
+                return $resolver->onBehalfOfId();
+            }
+        } catch (\Throwable) {
+            // resolver not bound; not a delegated request
+        }
         return null;
     }
 
