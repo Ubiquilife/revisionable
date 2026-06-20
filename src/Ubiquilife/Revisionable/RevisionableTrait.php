@@ -373,6 +373,18 @@ trait RevisionableTrait
             } elseif (\Auth::check()) {
                 return \Auth::user()->getAuthIdentifier();
             }
+
+            // OAuth API writes (MCP tools, REST, iOS) authenticate on the
+            // `api` guard; the default guard stays empty, which used to log
+            // user_id NULL on records the authenticated user plainly
+            // authored. Fall back to the api guard before giving up.
+            try {
+                if (\Auth::guard('api')->check()) {
+                    return \Auth::guard('api')->user()->getAuthIdentifier();
+                }
+            } catch (\Throwable $guardError) {
+                // Guard not defined in this app — fall through.
+            }
         } catch (\Exception $e) {
             return null;
         }
